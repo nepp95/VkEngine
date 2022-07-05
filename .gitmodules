@@ -1,0 +1,9 @@
+[submodule "VkEngine/vendor/glfw"]
+	path = VkEngine/vendor/glfw
+	url = https://github.com/nepp95/glfw.git
+[submodule "VkEngine/vendor/glm"]
+	path = VkEngine/vendor/glm
+	url = https://github.com/nepp95/glm.git
+[submodule "VkEngine/vendor/spdlog"]
+	path = VkEngine/vendor/spdlog
+	url = https://github.com/nepp95/spdlog.git
