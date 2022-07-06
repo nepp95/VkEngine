@@ -1,6 +1,7 @@
-# Binaries
+# Binaries and other compiled fikles
 bin/
 bin-int/
+**.spv
 
 # Visual Studio files and folder
 .vs/
