@@ -41,6 +41,12 @@ project "VkEngine"
 		runtime "Debug"
 		symbols "on"
 
+		postbuildcommands
+		{
+			"\"%{vulkansdk}/Bin/glslc.exe\" %{shaders}/shader.vert -o %{shaders}/vert.spv",
+			"\"%{vulkansdk}/Bin/glslc.exe\" %{shaders}/shader.frag -o %{shaders}/frag.spv"
+		}
+
 	filter "configurations:Release"
 		defines "VKE_RELEASE"
 		runtime "Release"

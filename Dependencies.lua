@@ -1,7 +1,7 @@
 -- Vulkan Dependencies
 
 vulkansdk = os.getenv("VULKAN_SDK")
-shaders = "%{wks.location}/VkEngine/data/shaders"
+shaders = "%{wks.location}/VkEngine/assets/shaders"
 
 IncludeDir = {}
 IncludeDir["glfw"] = "%{wks.location}/VkEngine/vendor/glfw/include"

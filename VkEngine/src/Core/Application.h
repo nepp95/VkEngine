@@ -35,16 +35,58 @@ public:
 	void Run();
 
 	// Gets
+	VkSurfaceKHR& GetSurface() { return m_surface; }
+	VkDevice& GetDevice() { return m_device; }
+
 	const ApplicationSpecification& GetSpecification() const { return m_specification; }
+	const GLFWwindow& GetWindow() const { return *m_window; }
+	GLFWwindow& GetWindow() { return *m_window; }
 	static Application& Get() { return *s_instance; }
 
 private:
 	void Init();
 	void Cleanup();
 
+	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void DrawFrame();
+
 private:
 	ApplicationSpecification m_specification;
 	GLFWwindow* m_window;
 
+	// Vulkan base
+	VkInstance m_instance;
+	VkPhysicalDevice m_physicalDevice;
+	VkSurfaceKHR m_surface;
+	VkDebugUtilsMessengerEXT m_debugMessenger;
+
+	// Logical device
+	VkDevice m_device;
+	VkQueue m_graphicsQueue;
+	VkQueue m_presentQueue;
+	
+	// Swapchain
+	VkSwapchainKHR m_swapchain;
+	VkExtent2D m_swapchainExtent;
+	VkFormat m_swapchainImageFormat;
+	std::vector<VkImage> m_swapchainImages;
+	std::vector<VkImageView> m_swapchainImageViews;
+	std::vector<VkFramebuffer> m_swapChainFramebuffers;
+
+	// Pipeline
+	VkRenderPass m_renderPass;
+	VkPipelineLayout m_pipelineLayout;
+	VkPipeline m_pipeline;
+
+	// Command pool/buffers
+	VkCommandPool m_commandPool;
+	VkCommandBuffer m_commandBuffer;
+
+	// Syncing
+	VkSemaphore m_imageAvailableSemaphore; // image has been acquired from swapchain and ready for render
+	VkSemaphore m_renderFinishedSemaphore; // finished render and ready for presentation
+	VkFence m_inFlightFence; // fence to make sure only one frame renders at a time
+	
+	// Static instance
 	static Application* s_instance;
 };
