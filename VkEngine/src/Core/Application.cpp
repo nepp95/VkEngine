@@ -69,6 +69,8 @@ void Application::Init()
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
 	m_window = glfwCreateWindow(m_specification.WindowWidth, m_specification.WindowHeight, m_specification.Name.c_str(), nullptr, nullptr);
+	glfwSetWindowUserPointer(m_window, this);
+	glfwSetFramebufferSizeCallback(m_window, OnFramebufferResize);
 
 	// And now the Vulkan journey begins...
 	
@@ -241,6 +243,13 @@ void Application::Shutdown()
 	glfwTerminate();
 }
 
+void Application::OnFramebufferResize(GLFWwindow* window, int width, int height)
+{
+	auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
+		
+	app->m_framebufferResized = true;
+}
+
 std::vector<const char*> Application::GetRequiredExtensions()
 {
 	uint32_t glfwExtensionCount{ 0 };
@@ -315,7 +324,6 @@ void Application::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t im
 void Application::DrawFrame()
 {
 	vkWaitForFences(GetDevice().Get(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
-	vkResetFences(GetDevice().Get(), 1, &m_inFlightFences[m_currentFrame]);
 
 	uint32_t imageIndex;
 	VkResult result = vkAcquireNextImageKHR(GetDevice().Get(), m_physicalDevice.GetSwapchain().Get(), UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
@@ -328,6 +336,8 @@ void Application::DrawFrame()
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
 		CORE_ERROR("Failed to acquire swapchain image!");
 	}
+	
+	vkResetFences(GetDevice().Get(), 1, &m_inFlightFences[m_currentFrame]);
 
 	vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
 	RecordCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
@@ -364,8 +374,11 @@ void Application::DrawFrame()
 
 	result = vkQueuePresentKHR(GetDevice().GetPresentQueue(), &presentInfo);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR && m_framebufferResized)
+	{
+		m_framebufferResized = false;
 		m_physicalDevice.GetSwapchain().Recreate();
+	}
 	else if (result != VK_SUCCESS)
 		CORE_ERROR("Failed to present swapchain image!");
 

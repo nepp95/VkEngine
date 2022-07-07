@@ -54,6 +54,8 @@ private:
 	void Init();
 	void Shutdown();
 
+	static void OnFramebufferResize(GLFWwindow* window, int width, int height);
+
 	// VkInstance
 	std::vector<const char*> GetRequiredExtensions();
 	bool HasValidationSupport();
@@ -84,6 +86,7 @@ private:
 	std::vector<VkSemaphore> m_renderFinishedSemaphores; // finished render and ready for presentation
 	std::vector<VkFence> m_inFlightFences; // fence to make sure only one frame renders at a time
 	uint32_t m_currentFrame{ 0 };
+	bool m_framebufferResized{ false };
 
 	// Static instance
 	static Application* s_instance;

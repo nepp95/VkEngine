@@ -11,6 +11,15 @@ Swapchain::~Swapchain()
 
 void Swapchain::Recreate()
 {
+	int width{ 0 }, height{ 0 };
+	glfwGetFramebufferSize(&Application::Get().GetWindow(), &width, &height);
+
+	while (width == 0 || height == 0)
+	{
+		glfwGetFramebufferSize(&Application::Get().GetWindow(), &width, &height);
+		glfwWaitEvents();
+	}
+
 	vkDeviceWaitIdle(Application::Get().GetDevice().Get());
 
 	Shutdown();
