@@ -15,3 +15,4 @@
 #include <vector>
 
 #include "Core/Base.h"
+#include "Core/Utility.h"

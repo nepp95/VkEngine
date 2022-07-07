@@ -1,5 +1,10 @@
 #pragma once
 
+#include "Vulkan/Base.h"
+#include "Vulkan/Device.h"
+#include "Vulkan/PhysicalDevice.h"
+#include "Vulkan/Pipeline.h"
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -35,8 +40,10 @@ public:
 	void Run();
 
 	// Gets
-	VkSurfaceKHR& GetSurface() { return m_surface; }
-	VkDevice& GetDevice() { return m_device; }
+	VkInstance& GetInstance() { return m_instance; }
+	PhysicalDevice& GetPhysicalDevice() { return m_physicalDevice; }
+	Device& GetDevice() { return m_device; }
+	Pipeline& GetPipeline() { return m_pipeline; }
 
 	const ApplicationSpecification& GetSpecification() const { return m_specification; }
 	const GLFWwindow& GetWindow() const { return *m_window; }
@@ -45,7 +52,12 @@ public:
 
 private:
 	void Init();
-	void Cleanup();
+	void Shutdown();
+
+	// VkInstance
+	std::vector<const char*> GetRequiredExtensions();
+	bool HasValidationSupport();
+	//
 
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void DrawFrame();
@@ -56,27 +68,12 @@ private:
 
 	// Vulkan base
 	VkInstance m_instance;
-	VkPhysicalDevice m_physicalDevice;
-	VkSurfaceKHR m_surface;
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 
-	// Logical device
-	VkDevice m_device;
-	VkQueue m_graphicsQueue;
-	VkQueue m_presentQueue;
-	
-	// Swapchain
-	VkSwapchainKHR m_swapchain;
-	VkExtent2D m_swapchainExtent;
-	VkFormat m_swapchainImageFormat;
-	std::vector<VkImage> m_swapchainImages;
-	std::vector<VkImageView> m_swapchainImageViews;
-	std::vector<VkFramebuffer> m_swapChainFramebuffers;
+	PhysicalDevice m_physicalDevice;
+	Device m_device;
 
-	// Pipeline
-	VkRenderPass m_renderPass;
-	VkPipelineLayout m_pipelineLayout;
-	VkPipeline m_pipeline;
+	Pipeline m_pipeline;
 
 	// Command pool/buffers
 	VkCommandPool m_commandPool;
