@@ -4,7 +4,7 @@
 // To validate or not to validate
 const bool EnableValidationLayers = VKE_DEBUG;
 // Validation layer
-const std::vector<const char*> ValidationLayers = { "VK_LAYER_KHRONOS_validation" };
+const std::vector<const char*> ValidationLayers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_monitor" };
 // Device extensions
 const std::vector<const char*> DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 // Max frames in flight
@@ -162,8 +162,14 @@ static bool IsDeviceSuitable(VkPhysicalDevice device)
 		swapChainAdequate = !swapChainSupport.Formats.empty() && !swapChainSupport.PresentModes.empty();
 	}
 
-	return indices.IsComplete() && extensionsSupported && swapChainAdequate;
-}
+	bool isDiscrete{ false };
+	VkPhysicalDeviceProperties deviceProperties;
+	vkGetPhysicalDeviceProperties(device, &deviceProperties);
+	if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+		isDiscrete = true;
+	
+	return indices.IsComplete() && extensionsSupported && swapChainAdequate && isDiscrete;
+ }
 
 static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
@@ -180,7 +186,8 @@ static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR
 {
 	for (const auto& presentMode : availablePresentModes)
 	{
-		if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+		//if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+		if (presentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
 			return presentMode;
 	}
 
