@@ -80,13 +80,14 @@ private:
 
 	// Command pool/buffers
 	VkCommandPool m_commandPool;
-	VkCommandBuffer m_commandBuffer;
+	std::vector<VkCommandBuffer> m_commandBuffers;
 
 	// Syncing
-	VkSemaphore m_imageAvailableSemaphore; // image has been acquired from swapchain and ready for render
-	VkSemaphore m_renderFinishedSemaphore; // finished render and ready for presentation
-	VkFence m_inFlightFence; // fence to make sure only one frame renders at a time
-	
+	std::vector<VkSemaphore> m_imageAvailableSemaphores; // image has been acquired from swapchain and ready for render
+	std::vector<VkSemaphore> m_renderFinishedSemaphores; // finished render and ready for presentation
+	std::vector<VkFence> m_inFlightFences; // fence to make sure only one frame renders at a time
+	uint32_t m_currentFrame{ 0 };
+
 	// Static instance
 	static Application* s_instance;
 };
