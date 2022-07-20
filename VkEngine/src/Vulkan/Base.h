@@ -148,3 +148,15 @@ inline bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface)
 
 	return indices.IsComplete() && extensionsSupported && swapChainAdequate && isDiscrete;
 } // IsDeviceSuitable
+
+inline uint32_t FindMemoryType(VkPhysicalDevice device, uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+	vkGetPhysicalDeviceMemoryProperties(device, &memoryProperties);
+
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+		if ((typeFilter & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+			return i;
+
+	CORE_ERROR("Failed to find suitable memory type!");
+}

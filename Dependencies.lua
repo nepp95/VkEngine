@@ -9,6 +9,7 @@ IncludeDir["glm"] = "%{wks.location}/VkEngine/vendor/glm"
 IncludeDir["spdlog"] = "%{wks.location}/VkEngine/vendor/spdlog/include"
 IncludeDir["stb_image"] = "%{wks.location}/VkEngine/vendor/stb_image"
 IncludeDir["vulkansdk"] = "%{vulkansdk}/Include"
+IncludeDir["vulkan_memory_allocator"] = "%{wks.location}/VkEngine/vendor/vulkan-memory-allocator"
 
 LibraryDir = {}
 LibraryDir["vulkansdk"] = "%{vulkansdk}/Lib"

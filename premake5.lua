@@ -20,6 +20,7 @@ workspace "VkEngine"
 	
 	group "Dependencies"
 		include "VkEngine/vendor/glfw"
+		include "VkEngine/vendor/vulkan-memory-allocator"
 	group ""
 
 	include "VkEngine"

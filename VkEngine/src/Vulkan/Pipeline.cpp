@@ -2,6 +2,7 @@
 #include "Pipeline.h"
 
 #include "Core/Application.h"
+#include "Renderer/Buffer.h"
 
 Pipeline::Pipeline()
 {}
@@ -75,10 +76,14 @@ void Pipeline::Create()
 	// Pipeline Vertex Input State
 	VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo{};
 	vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputCreateInfo.vertexBindingDescriptionCount = 0;
-	vertexInputCreateInfo.pVertexBindingDescriptions = nullptr;
-	vertexInputCreateInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputCreateInfo.pVertexAttributeDescriptions = nullptr;
+
+	auto bindingDescription = Vertex::GetBindingDescription();
+	auto attributeDescriptions = Vertex::GetAttributeDescriptions();
+
+	vertexInputCreateInfo.vertexBindingDescriptionCount = 1;
+	vertexInputCreateInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputCreateInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+	vertexInputCreateInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	// Pipeline Input Assembly State
 	VkPipelineInputAssemblyStateCreateInfo assemblyCreateInfo{};

@@ -7,3 +7,6 @@
 [submodule "VkEngine/vendor/spdlog"]
 	path = VkEngine/vendor/spdlog
 	url = https://github.com/nepp95/spdlog.git
+[submodule "VkEngine/vendor/vulkan-memory-allocator"]
+	path = VkEngine/vendor/vulkan-memory-allocator
+	url = https://github.com/nepp95/VulkanMemoryAllocator.git

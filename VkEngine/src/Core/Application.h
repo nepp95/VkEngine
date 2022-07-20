@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/Timestep.h"
+#include "Renderer/Buffer.h"
 #include "Vulkan/Base.h"
 #include "Vulkan/Device.h"
 #include "Vulkan/PhysicalDevice.h"
@@ -39,11 +41,16 @@ public:
 
 	void Run();
 
+	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
 	// Gets
 	VkInstance& GetInstance() { return m_instance; }
 	PhysicalDevice& GetPhysicalDevice() { return m_physicalDevice; }
 	Device& GetDevice() { return m_device; }
 	Pipeline& GetPipeline() { return m_pipeline; }
+
+	VkCommandPool& GetCommandPool() { return m_commandPool; }
 
 	const ApplicationSpecification& GetSpecification() const { return m_specification; }
 	const GLFWwindow& GetWindow() const { return *m_window; }
@@ -60,6 +67,9 @@ private:
 	std::vector<const char*> GetRequiredExtensions();
 	bool HasValidationSupport();
 	//
+
+	void CreateVertexBuffer();
+	void CreateIndexBuffer();
 
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void DrawFrame();
@@ -81,12 +91,19 @@ private:
 	VkCommandPool m_commandPool;
 	std::vector<VkCommandBuffer> m_commandBuffers;
 
+	VkBuffer m_indexBuffer;
+	VkDeviceMemory m_indexBufferMemory;
+
+	std::unique_ptr<VertexBuffer> m_vertexBuffer;
+
 	// Syncing
 	std::vector<VkSemaphore> m_imageAvailableSemaphores; // image has been acquired from swapchain and ready for render
 	std::vector<VkSemaphore> m_renderFinishedSemaphores; // finished render and ready for presentation
 	std::vector<VkFence> m_inFlightFences; // fence to make sure only one frame renders at a time
 	uint32_t m_currentFrame{ 0 };
 	bool m_framebufferResized{ false };
+
+	float m_lastFrameTime{ 0.0f };
 
 	// Static instance
 	static Application* s_instance;

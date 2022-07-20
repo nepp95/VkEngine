@@ -24,7 +24,8 @@ project "VkEngine"
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.stb_image}",
-		"%{IncludeDir.vulkansdk}"
+		"%{IncludeDir.vulkansdk}",
+		"%{IncludeDir.vulkan_memory_allocator}"
 	}
 
 	links

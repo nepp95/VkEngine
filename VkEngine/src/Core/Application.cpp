@@ -1,6 +1,16 @@
 #include "pch.h"
 #include "Application.h"
 
+const std::vector<Vertex> vertices = {
+	{ {  0.0f, -0.5f}, { 1.0f, 0.0f, 0.0f } },
+	{ {  0.5f,  0.5f}, { 0.0f, 1.0f, 0.0f } },
+	{ { -0.5f,  0.5f}, { 0.0f, 0.0f, 1.0f } }
+};
+
+const std::vector<uint32_t> indices = {
+	0, 1, 2, 2, 3, 0
+};
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -49,11 +59,75 @@ void Application::Run()
 {
 	while (!glfwWindowShouldClose(m_window))
 	{
+		float time = (float)glfwGetTime();
+		Timestep ts = time - m_lastFrameTime;
+		m_lastFrameTime = time;
+
 		glfwPollEvents();
 		DrawFrame();
 	}
 
 	vkDeviceWaitIdle(m_device.Get());
+}
+
+void Application::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+{
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = size;
+	bufferInfo.usage = usage;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	VK_CHECK(vkCreateBuffer(GetDevice().Get(), &bufferInfo, nullptr, &buffer), "Failed to create vertex buffer!");
+
+	VkMemoryRequirements memoryRequirements;
+	vkGetBufferMemoryRequirements(GetDevice().Get(), buffer, &memoryRequirements);
+
+	VkMemoryAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocateInfo.allocationSize = memoryRequirements.size;
+	allocateInfo.memoryTypeIndex = FindMemoryType(GetPhysicalDevice().Get(), memoryRequirements.memoryTypeBits, properties);
+
+	VK_CHECK(vkAllocateMemory(GetDevice().Get(), &allocateInfo, nullptr, &bufferMemory), "Failed to allocate vertex buffer memory!");
+
+	vkBindBufferMemory(GetDevice().Get(), buffer, bufferMemory, 0);
+}
+
+void Application::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+{
+
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandPool = m_commandPool;
+	allocInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	vkAllocateCommandBuffers(GetDevice().Get(), &allocInfo, &commandBuffer);
+
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+	VkBufferCopy copyRegion{};
+	copyRegion.srcOffset = 0;
+	copyRegion.dstOffset = 0;
+	copyRegion.size = size;
+	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+	vkEndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	vkQueueSubmit(GetDevice().GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(GetDevice().GetGraphicsQueue());
+
+	vkFreeCommandBuffers(GetDevice().Get(), m_commandPool, 1, &commandBuffer);
 }
 
 void Application::Init()
@@ -182,6 +256,12 @@ void Application::Init()
 	VK_CHECK(vkCreateCommandPool(m_device.Get(), &cmdPoolInfo, nullptr, &m_commandPool), "Failed to create command pool!");
 
 	//////////////////////////////////////////////
+	////	VERTEXBUFFER					  ////
+	//////////////////////////////////////////////
+	CreateVertexBuffer();
+	CreateIndexBuffer();
+
+	//////////////////////////////////////////////
 	////	COMMAND BUFFER					  ////
 	//////////////////////////////////////////////
 	m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
@@ -219,6 +299,10 @@ void Application::Init()
 void Application::Shutdown()
 {
 	m_physicalDevice.GetSwapchain().Shutdown();
+	
+	vkDestroyBuffer(GetDevice().Get(), m_indexBuffer, nullptr);
+	vkFreeMemory(GetDevice().Get(), m_indexBufferMemory, nullptr);
+	m_vertexBuffer->Shutdown();
 
 	m_pipeline.Shutdown();
 
@@ -292,6 +376,32 @@ bool Application::HasValidationSupport()
 	return true;
 }
 
+void Application::CreateVertexBuffer()
+{
+	m_vertexBuffer = std::make_unique<VertexBuffer>(vertices.data(), sizeof(vertices));
+}
+
+void Application::CreateIndexBuffer()
+{
+	VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+	void* data;
+	vkMapMemory(GetDevice().Get(), stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, indices.data(), (size_t)bufferSize);
+	vkUnmapMemory(GetDevice().Get(), stagingBufferMemory);
+
+	CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_indexBuffer, m_indexBufferMemory);
+
+	CopyBuffer(stagingBuffer, m_indexBuffer, bufferSize);
+
+	vkDestroyBuffer(GetDevice().Get(), stagingBuffer, nullptr);
+	vkFreeMemory(GetDevice().Get(), stagingBufferMemory, nullptr);
+}
+
 void Application::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
 	VkCommandBufferBeginInfo cmdBufferInfo{};
@@ -300,6 +410,17 @@ void Application::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t im
 	cmdBufferInfo.pInheritanceInfo = nullptr;
 
 	VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBufferInfo), "Failed to begin recording command buffer!");
+
+	// Update buffer
+	const std::vector<Vertex> vertices = {
+		{ { -0.5f, -0.5f}, { 1.0f, 0.0f, 0.0f } },
+		{ {  0.5f, -0.5f}, { 0.0f, 1.0f, 0.0f } },
+		{ {  0.5f,  0.5f}, { 0.0f, 0.0f, 1.0f } },
+		{ { -0.5f,  0.5f}, { 1.0f, 1.0f, 1.0f } }
+	};
+
+	m_vertexBuffer->SetData(vertices.data(), sizeof(vertices));
+	//
 
 	VkClearValue clearValue{ 0.0f, 0.0f, 0.0f, 1.0f };
 	VkRenderPassBeginInfo renderPassInfo{};
@@ -314,7 +435,13 @@ void Application::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t im
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline.GetPipeline());
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+	VkBuffer vertexBuffers[] = { m_vertexBuffer->GetBuffer()};
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 
